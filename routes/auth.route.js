@@ -1,12 +1,11 @@
 const express = require("express");
 const {
-  createEstate,
-  deleteEstate,
-  getAllEstates,
-  getEstateById,
-  updateEstate,
-  updateEstateStatus,
-} = require("../controllers/estateOffers.controller");
+  signup,
+  login,
+  forgotPassword,
+  verifyResetCode,
+  resetPassword,
+} = require("../services/auth.service");
 
 const AuthRoute = express.Router();
 
