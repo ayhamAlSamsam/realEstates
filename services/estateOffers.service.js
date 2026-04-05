@@ -57,11 +57,7 @@ class EstateService {
     // تنفيذ الاستعلامات المتوازية
     const [total, estates] = await Promise.all([
       Estate.countDocuments(filter),
-      Estate.find(filter)
-        .skip(skip)
-        .limit(limit)
-        .sort(sort)
-        .lean(),
+      Estate.find(filter).skip(skip).limit(limit).sort(sort).lean(),
     ]);
 
     return {
@@ -79,8 +75,7 @@ class EstateService {
       return null;
     }
 
-    const estate = await Estate.findById(id)
-      .lean();
+    const estate = await Estate.findById(id).lean();
 
     if (estate) {
       // زيادة عدد المشاهدات (اختياري - يمكن عملها بشكل غير متزامن)
@@ -91,7 +86,25 @@ class EstateService {
   }
 
   // ========== CREATE ESTATE ==========
-  async createEstate(data) {
+
+  // services/estateOffers.service.js
+
+  // ========== CREATE ESTATE ==========
+  async createEstate(data, files = null) {
+    // ✅ معالجة الملفات - تخزين اسم الملف فقط
+    if (files) {
+      if (files.mainImage) {
+        data.mainImage = files.mainImage[0].filename; // ✅ اسم الملف فقط
+      }
+      if (files.images) {
+        data.images = files.images.map((file) => file.filename); // ✅ أسماء الملفات
+      }
+      if (files.files) {
+        data.files = files.files.map((file) => file.filename); // ✅ أسماء الملفات
+      }
+    }
+
+    // حساب totalRooms
     data.totalRooms = (data.bedrooms || 0) + (data.livingRooms || 0);
 
     // حساب pricePerMeter
@@ -110,15 +123,28 @@ class EstateService {
   }
 
   // ========== UPDATE ESTATE ==========
-  async updateEstate(id, updateData) {
+  async updateEstate(id, updateData, files = null) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return null;
+    }
+
+    // ✅ معالجة الملفات - تخزين اسم الملف فقط
+    if (files) {
+      if (files.mainImage) {
+        updateData.mainImage = files.mainImage[0].filename; // ✅ اسم الملف فقط
+      }
+      if (files.images) {
+        updateData.images = files.images.map((file) => file.filename);
+      }
+      if (files.files) {
+        updateData.files = files.files.map((file) => file.filename);
+      }
     }
 
     // إضافة تاريخ آخر تعديل
     updateData.lastModifiedDate = new Date();
 
-    // جلب البيانات الحالية للحسابات
+    // جلب البيانات الحالية
     const currentEstate = await Estate.findById(id);
     if (!currentEstate) {
       return null;
@@ -154,7 +180,7 @@ class EstateService {
     }
 
     // تحديث العقار
-    const estate = await Estate.findOneAndUpdate({ _id: id }, updateData, {
+    const estate = await Estate.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });

@@ -270,7 +270,7 @@ const updateEstateSchema = Joi.object({
   isVerified: Joi.boolean(),
   isFeatured: Joi.boolean(),
   isUrgent: Joi.boolean(),
-}).min(1); // على الأقل حقل واحد للتحديث
+}); 
 
 // ========== 3. ID PARAM VALIDATION ==========
 const idParamSchema = Joi.object({

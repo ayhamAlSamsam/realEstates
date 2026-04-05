@@ -8,13 +8,17 @@ const {
   updateEstateStatus,
 } = require("../controllers/estateOffers.controller");
 
+const { uploadEstateFiles } = require("../middlewares/uploadingImage");
 const estateOffersRoute = express.Router();
 
-estateOffersRoute.route("/").post(createEstate).get(getAllEstates);
+estateOffersRoute
+  .route("/")
+  .post(uploadEstateFiles, createEstate)
+  .get(getAllEstates);
 estateOffersRoute
   .route("/:id")
   .get(getEstateById)
-  .patch(updateEstate)
+  .patch(uploadEstateFiles, updateEstate)
   .delete(deleteEstate);
 estateOffersRoute.route("/:id/status").put(updateEstateStatus);
 module.exports = estateOffersRoute;

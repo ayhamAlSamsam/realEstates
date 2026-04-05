@@ -1,3 +1,4 @@
+// controllers/estateOffers.controller.js
 const asyncHandler = require("express-async-handler");
 const estateService = require("../services/estateOffers.service");
 const {
@@ -8,13 +9,23 @@ const {
   updateStatusSchema,
 } = require("../validations/estateOffersValidation");
 
+// ✅ دالة مساعدة لبناء المسار الكامل للملفات
+const buildFileUrl = (req, filename, type = "images") => {
+  if (!filename) return null;
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  return `${baseUrl}/uploads/${type}/${filename}`;
+};
+
+const buildFilesUrls = (req, filenames, type = "images") => {
+  if (!filenames || !Array.isArray(filenames)) return [];
+  return filenames.map((filename) => buildFileUrl(req, filename, type));
+};
+
 // ========== GET ALL ESTATES ==========
 exports.getAllEstates = asyncHandler(async (req, res, next) => {
-  // التحقق من صحة معاملات البحث
   const { error, value } = getAllEstatesSchema.validate(req.query, {
     abortEarly: false,
   });
-
   if (error) {
     return res.status(400).json({
       status: "error",
@@ -23,8 +34,15 @@ exports.getAllEstates = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // استدعاء الـ Service
   const result = await estateService.getAllEstates(value);
+
+  // ✅ إضافة المسارات الكاملة للملفات في كل عقار
+  const estatesWithUrls = result.estates.map((estate) => ({
+    ...estate,
+    mainImage: buildFileUrl(req, estate.mainImage, "images"),
+    images: buildFilesUrls(req, estate.images, "images"),
+    files: buildFilesUrls(req, estate.files, "files"),
+  }));
 
   res.status(200).json({
     status: "success",
@@ -32,8 +50,8 @@ exports.getAllEstates = asyncHandler(async (req, res, next) => {
     limit: result.limit,
     totalPages: result.totalPages,
     totalResults: result.total,
-    results: result.estates.length,
-    data: result.estates,
+    results: estatesWithUrls.length,
+    data: estatesWithUrls,
   });
 });
 
@@ -41,38 +59,49 @@ exports.getAllEstates = asyncHandler(async (req, res, next) => {
 exports.getEstateById = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  // التحقق من صحة الـ ID
   const { error } = idParamSchema.validate({ id });
   if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid ID format",
-    });
+    return res
+      .status(400)
+      .json({ status: "error", message: "Invalid ID format" });
   }
 
-  // استدعاء الـ Service
   const estate = await estateService.getEstateById(id);
 
   if (!estate) {
-    return res.status(404).json({
-      status: "error",
-      message: `No estate found for this ID: ${id}`,
-    });
+    return res
+      .status(404)
+      .json({ status: "error", message: `No estate found for this ID: ${id}` });
   }
 
-  res.status(200).json({
-    status: "success",
-    data: estate,
-  });
+  // ✅ إضافة المسارات الكاملة للملفات
+  const estateWithUrls = {
+    ...estate,
+    mainImage: buildFileUrl(req, estate.mainImage, "images"),
+    images: buildFilesUrls(req, estate.images, "images"),
+    files: buildFilesUrls(req, estate.files, "files"),
+  };
+
+  res.status(200).json({ status: "success", data: estateWithUrls });
 });
 
 // ========== CREATE ESTATE ==========
 exports.createEstate = asyncHandler(async (req, res, next) => {
-  // التحقق من صحة البيانات
-  const { error, value } = createEstateSchema.validate(req.body, {
+  let estateData = req.body;
+
+  if (req.body.data) {
+    try {
+      estateData = JSON.parse(req.body.data);
+    } catch (error) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid JSON data format" });
+    }
+  }
+
+  const { error, value } = createEstateSchema.validate(estateData, {
     abortEarly: false,
   });
-
   if (error) {
     return res.status(400).json({
       status: "error",
@@ -81,13 +110,20 @@ exports.createEstate = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // استدعاء الـ Service
-  const estate = await estateService.createEstate(value);
+  const estate = await estateService.createEstate(value, req.files);
+
+  // ✅ إضافة المسارات الكاملة للملفات في الرد
+  const estateWithUrls = {
+    ...estate.toObject(),
+    mainImage: buildFileUrl(req, estate.mainImage, "images"),
+    images: buildFilesUrls(req, estate.images, "images"),
+    files: buildFilesUrls(req, estate.files, "files"),
+  };
 
   res.status(201).json({
     status: "success",
     message: "Estate created successfully",
-    data: estate,
+    data: estateWithUrls,
   });
 });
 
@@ -95,20 +131,27 @@ exports.createEstate = asyncHandler(async (req, res, next) => {
 exports.updateEstate = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  // التحقق من صحة الـ ID
   const { error: idError } = idParamSchema.validate({ id });
   if (idError) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid ID format",
-    });
+    return res
+      .status(400)
+      .json({ status: "error", message: "Invalid ID format" });
   }
 
-  // التحقق من صحة بيانات التحديث
-  const { error, value } = updateEstateSchema.validate(req.body, {
+  let updateData = req.body;
+  if (req.body.data) {
+    try {
+      updateData = JSON.parse(req.body.data);
+    } catch (error) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid JSON data format" });
+    }
+  }
+
+  const { error, value } = updateEstateSchema.validate(updateData, {
     abortEarly: false,
   });
-
   if (error) {
     return res.status(400).json({
       status: "error",
@@ -117,20 +160,26 @@ exports.updateEstate = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // استدعاء الـ Service
-  const estate = await estateService.updateEstate(id, value);
+  const estate = await estateService.updateEstate(id, value, req.files);
 
   if (!estate) {
-    return res.status(404).json({
-      status: "error",
-      message: `No estate found for this ID: ${id}`,
-    });
+    return res
+      .status(404)
+      .json({ status: "error", message: `No estate found for this ID: ${id}` });
   }
+
+  // ✅ إضافة المسارات الكاملة للملفات في الرد
+  const estateWithUrls = {
+    ...estate.toObject(),
+    mainImage: buildFileUrl(req, estate.mainImage, "images"),
+    images: buildFilesUrls(req, estate.images, "images"),
+    files: buildFilesUrls(req, estate.files, "files"),
+  };
 
   res.status(200).json({
     status: "success",
     message: "Estate updated successfully",
-    data: estate,
+    data: estateWithUrls,
   });
 });
 
@@ -138,23 +187,19 @@ exports.updateEstate = asyncHandler(async (req, res, next) => {
 exports.deleteEstate = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  // التحقق من صحة الـ ID
   const { error } = idParamSchema.validate({ id });
   if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid ID format",
-    });
+    return res
+      .status(400)
+      .json({ status: "error", message: "Invalid ID format" });
   }
 
-  // استدعاء الـ Service
   const estate = await estateService.deleteEstate(id);
 
   if (!estate) {
-    return res.status(404).json({
-      status: "error",
-      message: `No estate found for this ID: ${id}`,
-    });
+    return res
+      .status(404)
+      .json({ status: "error", message: `No estate found for this ID: ${id}` });
   }
 
   res.status(200).json({
@@ -168,32 +213,26 @@ exports.deleteEstate = asyncHandler(async (req, res, next) => {
 exports.updateEstateStatus = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  // التحقق من صحة الـ ID
   const { error: idError } = idParamSchema.validate({ id });
   if (idError) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid ID format",
-    });
+    return res
+      .status(400)
+      .json({ status: "error", message: "Invalid ID format" });
   }
 
-  // التحقق من صحة الحالة
   const { error, value } = updateStatusSchema.validate(req.body);
   if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: error.details[0].message,
-    });
+    return res
+      .status(400)
+      .json({ status: "error", message: error.details[0].message });
   }
 
-  // استدعاء الـ Service
   const estate = await estateService.updateStatus(id, value.status);
 
   if (!estate) {
-    return res.status(404).json({
-      status: "error",
-      message: `No estate found for this ID: ${id}`,
-    });
+    return res
+      .status(404)
+      .json({ status: "error", message: `No estate found for this ID: ${id}` });
   }
 
   res.status(200).json({

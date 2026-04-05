@@ -244,13 +244,8 @@ const estateSchema = new mongoose.Schema(
       type: String,
       required: [true, "Main image is required"],
     },
-    images: [
-      {
-        url: { type: String, required: true },
-        caption: { type: String },
-        isMain: { type: Boolean, default: false },
-      },
-    ],
+    images: [String],
+    files: [String],
     videoUrl: {
       type: String,
     },
