@@ -249,6 +249,7 @@ const estateSchema = new mongoose.Schema(
     videoUrl: {
       type: String,
     },
+    videoFiles: [String], // videoFiles is an array of strings that contains the filenames of the uploaded video files for the property
     virtualTourUrl: {
       type: String,
     }, // virtualTourUrl is a string that contains the URL to a virtual tour of the property (e.g., a 360-degree video or interactive walkthrough)

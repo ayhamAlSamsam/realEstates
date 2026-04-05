@@ -42,6 +42,7 @@ exports.getAllEstates = asyncHandler(async (req, res, next) => {
     mainImage: buildFileUrl(req, estate.mainImage, "images"),
     images: buildFilesUrls(req, estate.images, "images"),
     files: buildFilesUrls(req, estate.files, "files"),
+    videoFiles: buildFilesUrls(req, estate.videoFiles, "videos"), // ✅ أضف هذا
   }));
 
   res.status(200).json({
@@ -80,6 +81,7 @@ exports.getEstateById = asyncHandler(async (req, res, next) => {
     mainImage: buildFileUrl(req, estate.mainImage, "images"),
     images: buildFilesUrls(req, estate.images, "images"),
     files: buildFilesUrls(req, estate.files, "files"),
+    videoFiles: buildFilesUrls(req, estate.videoFiles, "videos"), // ✅ أضف هذا
   };
 
   res.status(200).json({ status: "success", data: estateWithUrls });
@@ -118,6 +120,7 @@ exports.createEstate = asyncHandler(async (req, res, next) => {
     mainImage: buildFileUrl(req, estate.mainImage, "images"),
     images: buildFilesUrls(req, estate.images, "images"),
     files: buildFilesUrls(req, estate.files, "files"),
+    videoFiles: buildFilesUrls(req, estate.videoFiles, "videos"), // ✅ أضف هذا
   };
 
   res.status(201).json({
@@ -174,6 +177,7 @@ exports.updateEstate = asyncHandler(async (req, res, next) => {
     mainImage: buildFileUrl(req, estate.mainImage, "images"),
     images: buildFilesUrls(req, estate.images, "images"),
     files: buildFilesUrls(req, estate.files, "files"),
+    videoFiles: buildFilesUrls(req, estate.videoFiles, "videos"), // ✅ أضف هذا
   };
 
   res.status(200).json({

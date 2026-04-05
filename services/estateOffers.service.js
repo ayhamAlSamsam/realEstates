@@ -102,6 +102,9 @@ class EstateService {
       if (files.files) {
         data.files = files.files.map((file) => file.filename); // ✅ أسماء الملفات
       }
+      if (files.videoFiles) {
+        data.videoFiles = files.videoFiles.map((file) => file.filename);
+      }
     }
 
     // حساب totalRooms
@@ -138,6 +141,9 @@ class EstateService {
       }
       if (files.files) {
         updateData.files = files.files.map((file) => file.filename);
+      }
+      if (files.videoFiles) {
+        updateData.videoFiles = files.videoFiles.map((file) => file.filename);
       }
     }
 

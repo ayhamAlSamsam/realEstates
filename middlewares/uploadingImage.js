@@ -72,4 +72,5 @@ exports.uploadEstateFiles = upload.fields([
   { name: "mainImage", maxCount: 1 },
   { name: "images", maxCount: 10 },
   { name: "files", maxCount: 10 },
+  { name: "videoFiles", maxCount: 10 },
 ]);
