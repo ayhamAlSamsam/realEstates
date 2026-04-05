@@ -6,7 +6,7 @@ class EstateService {
   // ========== GET ALL ESTATES ==========
   async getAllEstates(queryParams) {
     // بناء الفلتر
-    const filter = { status: "active" };
+    const filter = {};
 
     if (queryParams.city) filter.city = queryParams.city;
     if (queryParams.neighborhood)
@@ -61,7 +61,6 @@ class EstateService {
         .skip(skip)
         .limit(limit)
         .sort(sort)
-        .populate("owner", "name email")
         .lean(),
     ]);
 
@@ -81,7 +80,6 @@ class EstateService {
     }
 
     const estate = await Estate.findById(id)
-      .populate("owner", "name email")
       .lean();
 
     if (estate) {
@@ -156,11 +154,10 @@ class EstateService {
     }
 
     // تحديث العقار
-    const estate = await Estate.findOneAndUpdate(
-      { _id: id },
-      updateData,
-      { new: true, runValidators: true },
-    );
+    const estate = await Estate.findOneAndUpdate({ _id: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     return estate;
   }
@@ -176,7 +173,7 @@ class EstateService {
   }
 
   // ========== UPDATE STATUS ==========
-  async updateStatus(id, status, ) {
+  async updateStatus(id, status) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return null;
     }
@@ -188,15 +185,13 @@ class EstateService {
       updateData.closedDate = new Date();
     }
 
-    const estate = await Estate.findOneAndUpdate(
-      { _id: id,   },
-      updateData,
-      { new: true, runValidators: true },
-    );
+    const estate = await Estate.findOneAndUpdate({ _id: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     return estate;
   }
 }
-
 
 module.exports = new EstateService();

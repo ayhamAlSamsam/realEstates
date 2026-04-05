@@ -354,6 +354,7 @@ estateSchema.pre("save", function (next) {
       .replace(/[^a-zA-Z0-9]/g, "-")
       .replace(/-+/g, "-");
   }
+  next();
 });
 
 // ========== INDEXES for better performance ==========
