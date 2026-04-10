@@ -35,6 +35,7 @@ exports.getAllEstates = asyncHandler(async (req, res, next) => {
   }
 
   const result = await estateService.getAllEstates(value);
+console.log(result.estates);
 
   // ✅ إضافة المسارات الكاملة للملفات في كل عقار
   const estatesWithUrls = result.estates.map((estate) => ({
@@ -59,6 +60,7 @@ exports.getAllEstates = asyncHandler(async (req, res, next) => {
 // ========== GET SINGLE ESTATE ==========
 exports.getEstateById = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+console.log(id);
 
   const { error } = idParamSchema.validate({ id });
   if (error) {
@@ -101,18 +103,21 @@ exports.createEstate = asyncHandler(async (req, res, next) => {
     }
   }
 
-  const { error, value } = createEstateSchema.validate(estateData, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Validation error",
-      errors: error.details.map((err) => err.message),
-    });
-  }
+  // const { error, value } = createEstateSchema.validate(estateData, {
+  //   abortEarly: false,
+  // });
 
-  const estate = await estateService.createEstate(value, req.files);
+  // if (error) {
+  //   return res.status(400).json({
+  //     status: "error",
+  //     message: "Validation error",
+  //     errors: error.details.map((err) => err.message),
+  //   });
+  // }
+
+  // const estate = await estateService.createEstate(value, req.files);
+
+  const estate = await estateService.createEstate(estateData, req.files);
 
   // ✅ إضافة المسارات الكاملة للملفات في الرد
   const estateWithUrls = {
@@ -152,19 +157,20 @@ exports.updateEstate = asyncHandler(async (req, res, next) => {
     }
   }
 
-  const { error, value } = updateEstateSchema.validate(updateData, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Validation error",
-      errors: error.details.map((err) => err.message),
-    });
-  }
+  // const { error, value } = updateEstateSchema.validate(updateData, {
+  //   abortEarly: false,
+  // });
+  // if (error) {
+  //   return res.status(400).json({
+  //     status: "error",
+  //     message: "Validation error",
+  //     errors: error.details.map((err) => err.message),
+  //   });
+  // }
 
-  const estate = await estateService.updateEstate(id, value, req.files);
+  // const estate = await estateService.updateEstate(id, value, req.files);
 
+  const estate = await estateService.updateEstate(id, updateData, req.files);
   if (!estate) {
     return res
       .status(404)

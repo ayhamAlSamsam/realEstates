@@ -118,7 +118,7 @@ class EstateService {
     // إنشاء الكود الفريد
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
-    data.code = `PRP-${timestamp}-${random}`;
+    // data.code = `PRP-${timestamp}-${random}`;
 
     // إنشاء العقار
     const estate = await Estate.create(data);

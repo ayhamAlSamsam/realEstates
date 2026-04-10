@@ -6,7 +6,6 @@ const cors = require("cors");
 const dbConnection = require("./config/database");
 
 dotenv.config({ path: "config.env" });
-
 dbConnection();
 
 const authRoutes = require("./routes/auth.route");
@@ -27,8 +26,14 @@ if (process.env.NODE_ENV === "development") {
 app.use("/api/auth", authRoutes);
 app.use("/api/estate-offers", estateOffersRoutes);
 
-const PORT = process.env.PORT || 9000;
+const http = require("http");
+const { initSocket } = require("./socket");
+const server = http.createServer(app);
 
-app.listen(PORT, () => {
-  console.log(`App running on port ${PORT}`);
+// تهيئة Socket
+initSocket(server);
+
+const PORT = process.env.PORT || 9000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });

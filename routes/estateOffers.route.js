@@ -18,7 +18,7 @@ estateOffersRoute
 estateOffersRoute
   .route("/:id")
   .get(getEstateById)
-  .patch(uploadEstateFiles, updateEstate)
+  .put(uploadEstateFiles, updateEstate)
   .delete(deleteEstate);
 estateOffersRoute.route("/:id/status").put(updateEstateStatus);
 module.exports = estateOffersRoute;
