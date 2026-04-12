@@ -1,6 +1,8 @@
 // controllers/estateOffers.controller.js
 const asyncHandler = require("express-async-handler");
 const estateService = require("../services/estateOffers.service");
+const buildEstateQuery = require("../utils/buildEstateQuery");
+
 const {
   createEstateSchema,
   updateEstateSchema,
@@ -22,28 +24,35 @@ const buildFilesUrls = (req, filenames, type = "images") => {
 };
 
 // ========== GET ALL ESTATES ==========
+
 exports.getAllEstates = asyncHandler(async (req, res, next) => {
-  const { error, value } = getAllEstatesSchema.validate(req.query, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid query parameters",
-      errors: error.details.map((err) => err.message),
-    });
+  const rawQuery = req.query;
+console.log(rawQuery);
+
+  const cleanedQuery = Object.keys(rawQuery).reduce((acc, key) => {
+    const value = rawQuery[key];
+    if (value !== undefined && value !== "") {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+
+  // تحويل keyword من search (إذا لسه موجود بالفرونت)
+  if (cleanedQuery.search) {
+    cleanedQuery.keyword = cleanedQuery.search;
   }
 
-  const result = await estateService.getAllEstates(value);
-console.log(result.estates);
+  const query = buildEstateQuery(cleanedQuery);
+console.log("query", query);
 
-  // ✅ إضافة المسارات الكاملة للملفات في كل عقار
+  const result = await estateService.getAllEstates(query);
+
   const estatesWithUrls = result.estates.map((estate) => ({
     ...estate,
     mainImage: buildFileUrl(req, estate.mainImage, "images"),
     images: buildFilesUrls(req, estate.images, "images"),
     files: buildFilesUrls(req, estate.files, "files"),
-    videoFiles: buildFilesUrls(req, estate.videoFiles, "videos"), // ✅ أضف هذا
+    videoFiles: buildFilesUrls(req, estate.videoFiles, "videos"),
   }));
 
   res.status(200).json({

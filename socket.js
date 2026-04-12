@@ -1,18 +1,30 @@
 const { Server } = require("socket.io");
 const Estate = require("./models/estateOffersModel");
+const buildEstateQuery = require("./utils/buildEstateQuery");
 
 let io;
 
 let currentState = {
   filters: {
     search: "",
-    type: [], // estateType
+    type: [],
     price: {},
-    rooms: [], // bedrooms
+    rooms: [],
     status: "All",
   },
   selectedOffer: null,
   offers: [],
+};
+
+// ✅ نفس helper تبع الكنترولر
+const buildFileUrl = (baseUrl, filename, type = "images") => {
+  if (!filename) return null;
+  return `${baseUrl}/uploads/${type}/${filename}`;
+};
+
+const buildFilesUrls = (baseUrl, filenames, type = "images") => {
+  if (!filenames || !Array.isArray(filenames)) return [];
+  return filenames.map((f) => buildFileUrl(baseUrl, f, type));
 };
 
 const initSocket = (server) => {
@@ -27,53 +39,58 @@ const initSocket = (server) => {
 
     socket.on("update-state", async (newState) => {
       try {
-        currentState.filters = newState.filters;
+        const rawFilters = newState?.filters || {};
 
-        const { search, type, price, rooms, status } =
-          currentState.filters;
+        const filters = Object.keys(rawFilters).reduce((acc, key) => {
+          const value = rawFilters[key];
 
-        let query = {};
+          if (
+            value !== undefined &&
+            value !== null &&
+            value !== "" &&
+            !(Array.isArray(value) && value.length === 0)
+          ) {
+            acc[key] = value;
+          }
 
-        // 🔍 SEARCH
-        if (search) {
-          query.$or = [
-            { title: { $regex: search, $options: "i" } },
-            { code: { $regex: search, $options: "i" } }, // بدل propertyCode
-            { city: { $regex: search, $options: "i" } },
-            { neighborhood: { $regex: search, $options: "i" } },
-          ];
+          return acc;
+        }, {});
+
+        if (filters.search) {
+          filters.keyword = filters.search;
+          delete filters.search;
         }
 
-        // 🏠 TYPE
-        if (type?.length) {
-          query.estateType = { $in: type };
+        if (filters.type && !Array.isArray(filters.type)) {
+          filters.type = [filters.type];
         }
 
-        // 💰 PRICE
-        if (price?.min || price?.max) {
-          query.price = {};
-          if (price.min) query.price.$gte = Number(price.min);
-          if (price.max) query.price.$lte = Number(price.max);
+        if (filters.rooms && !Array.isArray(filters.rooms)) {
+          filters.rooms = [filters.rooms];
         }
 
-        // 🛏 ROOMS
-        if (rooms?.length) {
-          query.bedrooms = { $in: rooms.map((r) => Number(r)) };
-        }
+        const query = buildEstateQuery(filters);
 
-        // 📊 STATUS
-        if (status && status !== "All") {
-          query.status = status;
-        }
-
-        // ⚠️ مهم: لا تجيب كل الداتا
         const estates = await Estate.find(query)
           .limit(50)
           .sort({ createdAt: -1 });
 
-        currentState.offers = estates;
+        // ✅ هون الحل الحقيقي
+        const baseUrl = `http://localhost:8001`;
 
-        console.log("📊 Estates:", estates);
+        const estatesWithUrls = estates.map((estate) => ({
+          ...estate.toObject(),
+
+          mainImage: buildFileUrl(baseUrl, estate.mainImage, "images"),
+
+          images: buildFilesUrls(baseUrl, estate.images, "images"),
+
+          files: buildFilesUrls(baseUrl, estate.files, "files"),
+
+          videoFiles: buildFilesUrls(baseUrl, estate.videoFiles, "videos"),
+        }));
+
+        currentState.offers = estatesWithUrls;
 
         io.emit("state-updated", currentState);
       } catch (err) {
