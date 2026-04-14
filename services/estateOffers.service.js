@@ -1,65 +1,107 @@
 // services/estateService.js
 const mongoose = require("mongoose");
 const Estate = require("../models/estateOffersModel");
+const buildEstateQuery = require("../utils/buildEstateQuery"); // ✅ استدعاء دالة الفلترة الموحدة
 
 class EstateService {
-  // ========== GET ALL ESTATES ==========
+  // ========== GET ALL ESTATES (UPDATED) ==========
   async getAllEstates(queryParams) {
-    // بناء الفلتر
-    const filter = {};
+    const filters = {};
 
-    if (queryParams.city) filter.city = queryParams.city;
+    if (queryParams.keyword) filters.keyword = queryParams.keyword;
+    if (queryParams.city) filters.city = queryParams.city;
     if (queryParams.neighborhood)
-      filter.neighborhood = queryParams.neighborhood;
-    if (queryParams.processType) filter.processType = queryParams.processType;
-    if (queryParams.estateType) filter.estateType = queryParams.estateType;
-    if (queryParams.bedrooms) filter.bedrooms = queryParams.bedrooms;
-    if (queryParams.bathrooms) filter.bathrooms = queryParams.bathrooms;
-    if (queryParams.isFeatured !== undefined)
-      filter.isFeatured = queryParams.isFeatured;
-    if (queryParams.isUrgent !== undefined)
-      filter.isUrgent = queryParams.isUrgent;
+      filters.neighborhood = queryParams.neighborhood;
+    if (queryParams.processType) filters.processType = queryParams.processType;
+    if (queryParams.status && queryParams.status !== "All")
+      filters.status = queryParams.status;
 
-    // فلترة السعر
+    // ✅ نوع العقار
+    if (queryParams.estateType) {
+      filters.type = [queryParams.estateType];
+    }
+
+    // ✅ bedrooms → rooms (لأن buildEstateQuery تنتظر rooms)
+    if (queryParams.bedrooms) {
+      filters.rooms = [parseInt(queryParams.bedrooms)];
+    }
+
+    // ✅ bathrooms
+    if (queryParams.bathrooms) {
+      filters.bathrooms = parseInt(queryParams.bathrooms);
+    }
+
+    // ✅ Boolean values
+    if (queryParams.isFeatured !== undefined) {
+      filters.isFeatured =
+        queryParams.isFeatured === "true" || queryParams.isFeatured === true;
+    }
+
+    if (queryParams.isUrgent !== undefined) {
+      filters.isUrgent =
+        queryParams.isUrgent === "true" || queryParams.isUrgent === true;
+    }
+
+    // ✅ السعر
     if (queryParams.minPrice || queryParams.maxPrice) {
-      filter.price = {};
-      if (queryParams.minPrice) filter.price.$gte = queryParams.minPrice;
-      if (queryParams.maxPrice) filter.price.$lte = queryParams.maxPrice;
+      filters.price = {};
+      if (queryParams.minPrice)
+        filters.price.min = parseFloat(queryParams.minPrice);
+      if (queryParams.maxPrice)
+        filters.price.max = parseFloat(queryParams.maxPrice);
     }
 
-    // فلترة المساحة
-    if (queryParams.minSpace || queryParams.maxSpace) {
-      filter.totalSpace = {};
-      if (queryParams.minSpace) filter.totalSpace.$gte = queryParams.minSpace;
-      if (queryParams.maxSpace) filter.totalSpace.$lte = queryParams.maxSpace;
+    // ✅ المساحة
+    if (queryParams.minSpace) {
+      filters.minSpace = parseFloat(queryParams.minSpace);
+    }
+    if (queryParams.maxSpace) {
+      filters.maxSpace = parseFloat(queryParams.maxSpace);
     }
 
-    // البحث بالكلمة المفتاحية (keyword)
-    if (queryParams.keyword) {
-      filter.$or = [
-        { title: { $regex: queryParams.keyword, $options: "i" } },
-        { description: { $regex: queryParams.keyword, $options: "i" } },
-        { city: { $regex: queryParams.keyword, $options: "i" } },
-        { neighborhood: { $regex: queryParams.keyword, $options: "i" } },
-      ];
-    }
+    // ✅ تنظيف القيم الفارغة
+    Object.keys(filters).forEach((key) => {
+      if (
+        filters[key] === undefined ||
+        filters[key] === null ||
+        filters[key] === ""
+      ) {
+        delete filters[key];
+      }
+      if (Array.isArray(filters[key]) && filters[key].length === 0) {
+        delete filters[key];
+      }
+      if (key === "price" && !filters.price?.min && !filters.price?.max) {
+        delete filters.price;
+      }
+      if ((key === "minSpace" || key === "maxSpace") && !filters[key]) {
+        delete filters[key];
+      }
+    });
 
-    // Pagination
+    // ✅ بناء الاستعلام باستخدام buildEstateQuery
+    const query = buildEstateQuery(filters);
+
+    // ✅ للتصحيح - تأكد من الاستعلام
+    console.log("🔍 Built query:", JSON.stringify(query));
+
+    // ========== Pagination ==========
     const page = parseInt(queryParams.page, 10) || 1;
     const limit = parseInt(queryParams.limit, 10) || 10;
     const skip = (page - 1) * limit;
 
-    // Sorting
+    // ========== Sorting ==========
     const sortField = queryParams.sort || "createdAt";
     const sortOrder = queryParams.order === "asc" ? 1 : -1;
     const sort = { [sortField]: sortOrder };
 
-    // تنفيذ الاستعلامات المتوازية
+    // ========== تنفيذ الاستعلامات المتوازية ==========
     const [total, estates] = await Promise.all([
-      Estate.countDocuments(filter),
-      Estate.find(filter).skip(skip).limit(limit).sort(sort).lean(),
+      Estate.countDocuments(query),
+      Estate.find(query).skip(skip).limit(limit).sort(sort).lean(),
     ]);
 
+    // ========== إرجاع النتيجة ==========
     return {
       estates,
       total,
@@ -68,8 +110,8 @@ class EstateService {
       totalPages: Math.ceil(total / limit),
     };
   }
+  // ========== باقي الدوال كما هي ==========
 
-  // ========== GET SINGLE ESTATE ==========
   async getEstateById(id) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return null;
@@ -78,63 +120,47 @@ class EstateService {
     const estate = await Estate.findById(id).lean();
 
     if (estate) {
-      // زيادة عدد المشاهدات (اختياري - يمكن عملها بشكل غير متزامن)
+      // زيادة عدد المشاهدات (اختياري)
       await Estate.findByIdAndUpdate(id, { $inc: { views: 1 } });
     }
 
     return estate;
   }
 
-  // ========== CREATE ESTATE ==========
-
-  // services/estateOffers.service.js
-
-  // ========== CREATE ESTATE ==========
   async createEstate(data, files = null) {
-    // ✅ معالجة الملفات - تخزين اسم الملف فقط
     if (files) {
       if (files.mainImage) {
-        data.mainImage = files.mainImage[0].filename; // ✅ اسم الملف فقط
+        data.mainImage = files.mainImage[0].filename;
       }
       if (files.images) {
-        data.images = files.images.map((file) => file.filename); // ✅ أسماء الملفات
+        data.images = files.images.map((file) => file.filename);
       }
       if (files.files) {
-        data.files = files.files.map((file) => file.filename); // ✅ أسماء الملفات
+        data.files = files.files.map((file) => file.filename);
       }
       if (files.videoFiles) {
         data.videoFiles = files.videoFiles.map((file) => file.filename);
       }
     }
 
-    // حساب totalRooms
     data.totalRooms = (data.bedrooms || 0) + (data.livingRooms || 0);
 
-    // حساب pricePerMeter
     if (data.totalSpace && data.price && data.totalSpace > 0) {
       data.pricePerMeter = data.price / data.totalSpace;
     }
 
-    // إنشاء الكود الفريد
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    // data.code = `PRP-${timestamp}-${random}`;
-
-    // إنشاء العقار
     const estate = await Estate.create(data);
     return estate;
   }
 
-  // ========== UPDATE ESTATE ==========
   async updateEstate(id, updateData, files = null) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return null;
     }
 
-    // ✅ معالجة الملفات - تخزين اسم الملف فقط
     if (files) {
       if (files.mainImage) {
-        updateData.mainImage = files.mainImage[0].filename; // ✅ اسم الملف فقط
+        updateData.mainImage = files.mainImage[0].filename;
       }
       if (files.images) {
         updateData.images = files.images.map((file) => file.filename);
@@ -147,16 +173,13 @@ class EstateService {
       }
     }
 
-    // إضافة تاريخ آخر تعديل
     updateData.lastModifiedDate = new Date();
 
-    // جلب البيانات الحالية
     const currentEstate = await Estate.findById(id);
     if (!currentEstate) {
       return null;
     }
 
-    // حساب totalRooms إذا تغيرت bedrooms أو livingRooms
     if (
       updateData.bedrooms !== undefined ||
       updateData.livingRooms !== undefined
@@ -172,7 +195,6 @@ class EstateService {
       updateData.totalRooms = bedrooms + livingRooms;
     }
 
-    // حساب pricePerMeter إذا تغير price أو totalSpace
     if (updateData.price !== undefined || updateData.totalSpace !== undefined) {
       const price =
         updateData.price !== undefined ? updateData.price : currentEstate.price;
@@ -185,7 +207,6 @@ class EstateService {
       }
     }
 
-    // تحديث العقار
     const estate = await Estate.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
@@ -194,7 +215,6 @@ class EstateService {
     return estate;
   }
 
-  // ========== DELETE ESTATE ==========
   async deleteEstate(id) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return null;
@@ -204,7 +224,6 @@ class EstateService {
     return estate;
   }
 
-  // ========== UPDATE STATUS ==========
   async updateStatus(id, status) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return null;
@@ -212,7 +231,6 @@ class EstateService {
 
     const updateData = { status };
 
-    // إذا تم البيع أو التأجير، أضف تاريخ الإغلاق
     if (status === "sold" || status === "rented") {
       updateData.closedDate = new Date();
     }

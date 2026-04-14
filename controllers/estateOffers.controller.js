@@ -25,10 +25,12 @@ const buildFilesUrls = (req, filenames, type = "images") => {
 
 // ========== GET ALL ESTATES ==========
 
+// controllers/estateController.js
 exports.getAllEstates = asyncHandler(async (req, res, next) => {
   const rawQuery = req.query;
-console.log(rawQuery);
+  console.log("Raw query:", rawQuery);
 
+  // تنظيف القيم الفارغة
   const cleanedQuery = Object.keys(rawQuery).reduce((acc, key) => {
     const value = rawQuery[key];
     if (value !== undefined && value !== "") {
@@ -37,15 +39,14 @@ console.log(rawQuery);
     return acc;
   }, {});
 
-  // تحويل keyword من search (إذا لسه موجود بالفرونت)
+  // تحويل search إلى keyword
   if (cleanedQuery.search) {
     cleanedQuery.keyword = cleanedQuery.search;
+    delete cleanedQuery.search; // ✅ حذف search بعد التحويل
   }
 
-  const query = buildEstateQuery(cleanedQuery);
-console.log("query", query);
-
-  const result = await estateService.getAllEstates(query);
+  // ✅ التصحيح: أرسل cleanedQuery وليس buildEstateQuery(cleanedQuery)!
+  const result = await estateService.getAllEstates(cleanedQuery);
 
   const estatesWithUrls = result.estates.map((estate) => ({
     ...estate,
@@ -69,7 +70,7 @@ console.log("query", query);
 // ========== GET SINGLE ESTATE ==========
 exports.getEstateById = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-console.log(id);
+  console.log(id);
 
   const { error } = idParamSchema.validate({ id });
   if (error) {

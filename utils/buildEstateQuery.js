@@ -1,55 +1,63 @@
-// utils/buildEstateQuery.js
+// utils/buildEstateQuery.js (تأكد من وجوده بهذا الشكل)
+const buildEstateQuery = (filters) => {
+  const query = {};
 
-const buildEstateQuery = (f) => {
-  let query = {};
-console.log("build",f);
-
-  // 🔍 unified search (code + title فقط)
-  if (f.keyword) {
+  // كلمة البحث
+  if (filters.keyword) {
     query.$or = [
-      { code: { $regex: f.keyword, $options: "i" } },
-      // { title: { $regex: f.keyword, $options: "i" } },
+      { title: { $regex: filters.keyword, $options: "i" } },
+      { description: { $regex: filters.keyword, $options: "i" } },
+      { city: { $regex: filters.keyword, $options: "i" } },
+      { neighborhood: { $regex: filters.keyword, $options: "i" } },
     ];
   }
 
-  // 🏷️ basic
-  if (f.processType) query.processType = f.processType;
-  if (f.estateType) query.estateType = f.estateType;
-
-  if (f.city) {
-    query.city = { $regex: f.city, $options: "i" };
+  // نوع العقار
+  if (filters.type && filters.type.length > 0) {
+    query.estateType = { $in: filters.type };
   }
 
-  if (f.neighborhood) {
-    query.neighborhood = { $regex: f.neighborhood, $options: "i" };
-  }
-
-  // 🛏️
-  if (f.bedrooms) {
-    query.bedrooms = { $gte: Number(f.bedrooms) };
-  }
-
-  if (f.bathrooms) {
-    query.bathrooms = { $gte: Number(f.bathrooms) };
-  }
-
-  // 💰 price
-  if (f.minPrice || f.maxPrice) {
+  // السعر
+  if (filters.price) {
     query.price = {};
-    if (f.minPrice) query.price.$gte = Number(f.minPrice);
-    if (f.maxPrice) query.price.$lte = Number(f.maxPrice);
+    if (filters.price.min) query.price.$gte = filters.price.min;
+    if (filters.price.max) query.price.$lte = filters.price.max;
   }
 
-  // 📐 space
-  if (f.minSpace || f.maxSpace) {
+  // الغرف
+  if (filters.rooms && filters.rooms.length > 0) {
+    query.bedrooms = { $in: filters.rooms };
+  }
+
+  // الحالة
+  if (filters.status && filters.status !== "All") {
+    query.status = filters.status;
+  }
+
+  // المدينة
+  if (filters.city) query.city = filters.city;
+
+  // الحي
+  if (filters.neighborhood) query.neighborhood = filters.neighborhood;
+
+  // نوع العملية (بيع/إيجار)
+  if (filters.processType) query.processType = filters.processType;
+
+  // مميز
+  if (filters.isFeatured !== undefined) query.isFeatured = filters.isFeatured;
+
+  // عاجل
+  if (filters.isUrgent !== undefined) query.isUrgent = filters.isUrgent;
+
+  // عدد الحمامات
+  if (filters.bathrooms) query.bathrooms = filters.bathrooms;
+
+  // المساحة
+  if (filters.minSpace || filters.maxSpace) {
     query.totalSpace = {};
-    if (f.minSpace) query.totalSpace.$gte = Number(f.minSpace);
-    if (f.maxSpace) query.totalSpace.$lte = Number(f.maxSpace);
+    if (filters.minSpace) query.totalSpace.$gte = filters.minSpace;
+    if (filters.maxSpace) query.totalSpace.$lte = filters.maxSpace;
   }
-
-  // ⭐ flags
-  if (f.isFeatured === true) query.isFeatured = true;
-  if (f.isUrgent === true) query.isUrgent = true;
 
   return query;
 };
