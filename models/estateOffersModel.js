@@ -7,7 +7,7 @@ const estateSchema = new mongoose.Schema(
     title: { type: String, trim: true },
     slug: { type: String, lowercase: true },
 
-    processType: { type: String, default: "for_sale" },
+    processType: { type: String, default: "sale" },
     estateType: { type: String },
 
     city: { type: String, trim: true },

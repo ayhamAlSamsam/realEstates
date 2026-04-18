@@ -14,6 +14,11 @@ const {
 // ✅ دالة مساعدة لبناء المسار الكامل للملفات
 const buildFileUrl = (req, filename, type = "images") => {
   if (!filename) return null;
+    // ✅ إذا هو URL كامل لا تعد بناءه
+  if (filename.startsWith("http")) {
+    return filename;
+  }
+  
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   return `${baseUrl}/uploads/${type}/${filename}`;
 };

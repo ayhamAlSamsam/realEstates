@@ -9,6 +9,7 @@ const buildEstateQuery = (filters) => {
       { description: { $regex: filters.keyword, $options: "i" } },
       { city: { $regex: filters.keyword, $options: "i" } },
       { neighborhood: { $regex: filters.keyword, $options: "i" } },
+      { code: { $regex: filters.keyword, $options: "i" } },
     ];
   }
 
