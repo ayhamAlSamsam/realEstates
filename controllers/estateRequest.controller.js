@@ -60,18 +60,18 @@ exports.getRequestById = asyncHandler(async (req, res, next) => {
 
 // ========== CREATE REQUEST ==========
 exports.createRequest = asyncHandler(async (req, res, next) => {
-  const { error, value } = createRequestSchema.validate(req.body, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Validation error",
-      errors: error.details.map((err) => err.message),
-    });
-  }
-
-  const request = await requestService.createRequest(value);
+  // const { error, value } = createRequestSchema.validate(req.body, {
+  //   abortEarly: false,
+  // });
+  // if (error) {
+  //   return res.status(400).json({
+  //     status: "error",
+  //     message: "Validation error",
+  //     errors: error.details.map((err) => err.message),
+  //   });
+  // }
+  let estateData = req.body;
+  const request = await requestService.createRequest(estateData);
 
   res.status(201).json({
     status: "success",
@@ -91,18 +91,19 @@ exports.updateRequest = asyncHandler(async (req, res, next) => {
       .json({ status: "error", message: "Invalid ID format" });
   }
 
-  const { error, value } = updateRequestSchema.validate(req.body, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: "Validation error",
-      errors: error.details.map((err) => err.message),
-    });
-  }
+  // const { error, value } = updateRequestSchema.validate(req.body, {
+  //   abortEarly: false,
+  // });
+  // if (error) {
+  //   return res.status(400).json({
+  //     status: "error",
+  //     message: "Validation error",
+  //     errors: error.details.map((err) => err.message),
+  //   });
+  // }
+  let estateData = req.body;
 
-  const request = await requestService.updateRequest(id, value);
+  const request = await requestService.updateRequest(id, estateData);
 
   if (!request) {
     return res.status(404).json({

@@ -1,6 +1,6 @@
 // services/requestService.js
 const mongoose = require("mongoose");
-const Request = require("../models/requestModel");
+const Request = require("../models/estateRequestModel");
 
 class RequestService {
   // ========== GET ALL REQUESTS (Basic) ==========

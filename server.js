@@ -10,6 +10,7 @@ dbConnection();
 
 const authRoutes = require("./routes/auth.route");
 const estateOffersRoutes = require("./routes/estateOffers.route");
+const estateRequestsRoute = require("./routes/estateRequest.route");
 
 const app = express();
 
@@ -25,6 +26,7 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/estate-offers", estateOffersRoutes);
+app.use("/api/estate-requests", estateRequestsRoute);
 
 const http = require("http");
 const { initSocket } = require("./socket");
