@@ -4,21 +4,30 @@ const mongoose = require("mongoose");
 const estateSchema = new mongoose.Schema(
   {
     code: { type: String, uppercase: true, trim: true },
+    offerNumber: { type: String, unique: true, trim: true },
     title: { type: String, trim: true },
     slug: { type: String, lowercase: true },
 
     processType: { type: String, default: "sale" },
+    offerType: {
+      type: String,
+      enum: ["direct", "auction", "tender", "exchange"],
+      default: "direct",
+    },
     estateType: { type: String },
 
     city: { type: String, trim: true },
     neighborhood: { type: String, trim: true },
     address: { type: String, trim: true },
+    buildingNumber: { type: String, trim: true },
 
     location: {
       lat: { type: Number },
       lng: { type: Number },
     },
     mapUrl: { type: String },
+
+    directions: [{ type: String, enum: ["north", "south", "east", "west"] }],
 
     totalSpace: { type: Number },
     builtArea: { type: Number, default: 0 },
@@ -33,18 +42,42 @@ const estateSchema = new mongoose.Schema(
     floorNumber: { type: Number, default: null },
     totalFloors: { type: Number, default: null },
     hasElevator: { type: Boolean, default: false },
+    roofPriority: {
+      type: String,
+      enum: ["private", "shared", "none"],
+      default: "none",
+    },
 
     price: { type: Number },
+    minPrice: { type: Number, default: null },
     currency: { type: String, default: "USD" },
     pricePerMeter: { type: Number, default: null },
     isNegotiable: { type: Boolean, default: false },
 
     paymentType: { type: String, default: "all" },
-    downPayment: { type: Number, default: 0 },
-    installmentMonths: { type: Number, default: 0 },
+    downPayment: { type: Number, default: 0 }, // مقدم الدفع
+    installmentMonths: { type: Number, default: 0 }, // عدد شهور التقسيط
 
     description: { type: String },
     shortDescription: { type: String },
+
+    vacuumType: {
+      type: String,
+    },
+
+    estateCondition: {
+      type: String,
+      enum: [
+        "new",
+        "excellent",
+        "very_good",
+        "good",
+        "needs_renovation",
+        "under_construction",
+      ],
+      default: "good",
+    },
+    buildingAge: { type: Number, default: null },
 
     features: {
       hasBalcony: { type: Boolean, default: false },
@@ -79,6 +112,7 @@ const estateSchema = new mongoose.Schema(
     agentName: { type: String, trim: true },
     agentPhone: { type: String, trim: true },
     agentEmail: { type: String, lowercase: true },
+    staffParcode: { type: String, trim: true },
 
     views: { type: Number, default: 0 },
     inquiries: { type: Number, default: 0 },
@@ -89,9 +123,9 @@ const estateSchema = new mongoose.Schema(
     isUrgent: { type: Boolean, default: false },
     status: { type: String, default: "pending" },
 
-    listingExpiryDate: { type: Date, default: null },
-    lastModifiedDate: { type: Date, default: Date.now },
-    closedDate: { type: Date, default: null },
+    listingExpiryDate: { type: Date, default: null }, // تاريخ انتهاء العرض
+    lastModifiedDate: { type: Date, default: Date.now }, // تاريخ آخر تعديل
+    closedDate: { type: Date, default: null }, // تاريخ إغلاق العرض
 
     ownerName: { type: String },
     ownerNumber: { type: String },
@@ -108,10 +142,9 @@ const estateSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
-// Pre-save middleware
 estateSchema.pre("save", function (next) {
   if (this.title && !this.slug) {
     this.slug = this.title
@@ -122,8 +155,8 @@ estateSchema.pre("save", function (next) {
   next();
 });
 
-// Indexes
 estateSchema.index({ code: 1 });
+estateSchema.index({ offerNumber: 1 });
 estateSchema.index({ slug: 1 });
 estateSchema.index({ city: 1, neighborhood: 1 });
 estateSchema.index({ price: 1 });
