@@ -143,11 +143,11 @@ class EstateService {
       }
     }
 
-    data.totalRooms = (data.bedrooms || 0) + (data.livingRooms || 0);
+    // data.totalRooms = (data.rooms || 0) + (data.livingRooms || 0);
 
-    if (data.totalSpace && data.price && data.totalSpace > 0) {
-      data.pricePerMeter = data.price / data.totalSpace;
-    }
+    // if (data.totalSpace && data.price && data.totalSpace > 0) {
+    //   data.pricePerMeter = data.price / data.totalSpace;
+    // }
 
     const estate = await Estate.create(data);
     return estate;
@@ -180,32 +180,32 @@ class EstateService {
       return null;
     }
 
-    if (
-      updateData.bedrooms !== undefined ||
-      updateData.livingRooms !== undefined
-    ) {
-      const bedrooms =
-        updateData.bedrooms !== undefined
-          ? updateData.bedrooms
-          : currentEstate.bedrooms;
-      const livingRooms =
-        updateData.livingRooms !== undefined
-          ? updateData.livingRooms
-          : currentEstate.livingRooms;
-      updateData.totalRooms = bedrooms + livingRooms;
-    }
+    // if (
+    //   updateData.bedrooms !== undefined ||
+    //   updateData.livingRooms !== undefined
+    // ) {
+    //   const bedrooms =
+    //     updateData.bedrooms !== undefined
+    //       ? updateData.bedrooms
+    //       : currentEstate.bedrooms;
+    //   const livingRooms =
+    //     updateData.livingRooms !== undefined
+    //       ? updateData.livingRooms
+    //       : currentEstate.livingRooms;
+    //   updateData.totalRooms = bedrooms + livingRooms;
+    // }
 
-    if (updateData.price !== undefined || updateData.totalSpace !== undefined) {
-      const price =
-        updateData.price !== undefined ? updateData.price : currentEstate.price;
-      const totalSpace =
-        updateData.totalSpace !== undefined
-          ? updateData.totalSpace
-          : currentEstate.totalSpace;
-      if (totalSpace && price && totalSpace > 0) {
-        updateData.pricePerMeter = price / totalSpace;
-      }
-    }
+    // if (updateData.price !== undefined || updateData.totalSpace !== undefined) {
+    //   const price =
+    //     updateData.price !== undefined ? updateData.price : currentEstate.price;
+    //   const totalSpace =
+    //     updateData.totalSpace !== undefined
+    //       ? updateData.totalSpace
+    //       : currentEstate.totalSpace;
+    //   if (totalSpace && price && totalSpace > 0) {
+    //     updateData.pricePerMeter = price / totalSpace;
+    //   }
+    // }
 
     const estate = await Estate.findByIdAndUpdate(id, updateData, {
       new: true,

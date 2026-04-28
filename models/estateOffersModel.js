@@ -27,31 +27,38 @@ const estateSchema = new mongoose.Schema(
     },
     mapUrl: { type: String },
 
-    directions: [{ type: String, enum: ["north", "south", "east", "west"] }],
-
+    directions: [{ type: [String], enum: ["north", "south", "east", "west"] }],
+    furnishingStatus: {
+      type: String,
+      default: "unfurnished",
+    },
+    facade: {
+      type: String,
+      trim: true,
+    },
     totalSpace: { type: Number },
     builtArea: { type: Number, default: 0 },
     landArea: { type: Number, default: 0 },
     areaUnit: { type: String, default: "sqm" },
 
-    bedrooms: { type: Number, default: 0 },
+    rooms: { type: Number, default: 0 },
     bathrooms: { type: Number, default: 0 },
-    livingRooms: { type: Number, default: 1 },
-    totalRooms: { type: Number, default: 0 },
 
     floorNumber: { type: Number, default: null },
     totalFloors: { type: Number, default: null },
     hasElevator: { type: Boolean, default: false },
     roofPriority: {
       type: String,
-      enum: ["private", "shared", "none"],
-      default: "none",
     },
 
-    price: { type: Number },
+    price: {
+      minSYP: Number,
+      maxSYP: Number,
+      minUSD: Number,
+      maxUSD: Number,
+    },
     minPrice: { type: Number, default: null },
     currency: { type: String, default: "USD" },
-    pricePerMeter: { type: Number, default: null },
     isNegotiable: { type: Boolean, default: false },
 
     paymentType: { type: String, default: "all" },
@@ -137,6 +144,33 @@ const estateSchema = new mongoose.Schema(
       restaurants: { type: Number, default: 0 },
       metro: { type: Number, default: 0 },
     },
+    pricePerMeterFrom: {
+      type: Number,
+    }, // السعر بالمتر من
+
+    pricePerMeterTo: {
+      type: Number,
+    }, // السعر بالمتر إلى
+
+    recordNumber: {
+      type: String,
+      trim: true,
+    }, // رقم المحضر
+
+    parcelNumber: {
+      type: String,
+      trim: true,
+    }, // رقم المقسم
+
+    availability: {
+      type: String,
+      trim: true,
+    }, // الفراغة
+
+    partnership: {
+      type: String,
+      trim: true,
+    }, // شراكة العرض
   },
   {
     timestamps: true,
