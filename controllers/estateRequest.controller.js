@@ -179,3 +179,42 @@ exports.updateRequestStatus = asyncHandler(async (req, res, next) => {
     data: request,
   });
 });
+
+// ========== MATCH REQUEST WITH OFFERS ==========
+exports.matchRequestWithOffers = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  // التحقق من صحة الـ ID
+  const { error } = idParamSchema.validate({ id });
+  if (error) {
+    return res
+      .status(400)
+      .json({ status: "error", message: "Invalid ID format" });
+  }
+
+  try {
+    const result = await requestService.matchOffersForRequest(id);
+
+    if (result === null) {
+      return res.status(404).json({
+        status: "error",
+        message: `No request found for this ID: ${id}`,
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: `Found ${result.totalMatches} matching offer(s)`,
+      data: {
+        request: result.request,
+        totalMatches: result.totalMatches,
+        offers: result.matchedOffers,
+      },
+    });
+  } catch (err) {
+    return res.status(400).json({
+      status: "error",
+      message: err.message,
+    });
+  }
+});
