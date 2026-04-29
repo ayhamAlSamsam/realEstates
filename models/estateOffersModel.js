@@ -162,7 +162,7 @@ const estateSchema = new mongoose.Schema(
       trim: true,
     }, // رقم المقسم
 
-    availability: {
+    OwnershipType: {
       type: String,
       trim: true,
     }, // الفراغة
