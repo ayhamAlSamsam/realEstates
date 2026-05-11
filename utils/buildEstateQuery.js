@@ -20,14 +20,21 @@ const buildEstateQuery = (filters) => {
 
   // السعر
   if (filters.price) {
-    query.price = {};
-    if (filters.price.min) query.price.$gte = filters.price.min;
-    if (filters.price.max) query.price.$lte = filters.price.max;
-  }
+    if (filters.price.min !== undefined) {
+      query["price.minUSD"] = {
+        $gte: filters.price.min,
+      };
+    }
 
+    if (filters.price.max !== undefined) {
+      query["price.maxUSD"] = {
+        $lte: filters.price.max,
+      };
+    }
+  }
   // الغرف
   if (filters.rooms && filters.rooms.length > 0) {
-    query.bedrooms = { $in: filters.rooms };
+    query.rooms = { $in: filters.rooms };
   }
 
   // الحالة
