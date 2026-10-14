@@ -60,24 +60,33 @@ exports.getRequestById = asyncHandler(async (req, res, next) => {
 
 // ========== CREATE REQUEST ==========
 exports.createRequest = asyncHandler(async (req, res, next) => {
-  // const { error, value } = createRequestSchema.validate(req.body, {
-  //   abortEarly: false,
-  // });
-  // if (error) {
-  //   return res.status(400).json({
-  //     status: "error",
-  //     message: "Validation error",
-  //     errors: error.details.map((err) => err.message),
-  //   });
-  // }
-  let estateData = req.body;
-  const request = await requestService.createRequest(estateData);
+  try {
+    const request = await requestService.createRequest(req.body);
 
-  res.status(201).json({
-    status: "success",
-    message: "Request created successfully",
-    data: request,
-  });
+    return res.status(201).json({
+      status: "success",
+      message: "Request created successfully",
+      data: request,
+    });
+  } catch (error) {
+    if (error.message === "REQUEST_NUMBER_ALREADY_EXISTS") {
+      return res.status(409).json({
+        status: "error",
+        message: "REQUEST_NUMBER_ALREADY_EXISTS",
+        field: "requestNumber",
+      });
+    }
+
+    if (error.message === "DUPLICATE_VALUE_ALREADY_EXISTS") {
+      return res.status(409).json({
+        status: "error",
+        message: "DUPLICATE_VALUE_ALREADY_EXISTS",
+        field: error.field || null,
+      });
+    }
+
+    return next(error);
+  }
 });
 
 // ========== UPDATE REQUEST ==========

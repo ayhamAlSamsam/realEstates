@@ -22,8 +22,18 @@ class EstateService {
     }
 
     // ✅ bedrooms → rooms (لأن buildEstateQuery تنتظر rooms)
-    if (queryParams.bedrooms) {
-      filters.rooms = [parseInt(queryParams.bedrooms)];
+    if (
+      queryParams.minBedrooms !== undefined &&
+      queryParams.minBedrooms !== ""
+    ) {
+      filters.minBedrooms = Number(queryParams.minBedrooms);
+    }
+
+    if (
+      queryParams.maxBedrooms !== undefined &&
+      queryParams.maxBedrooms !== ""
+    ) {
+      filters.maxBedrooms = Number(queryParams.maxBedrooms);
     }
 
     // ✅ bathrooms

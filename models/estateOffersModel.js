@@ -42,10 +42,16 @@ const estateSchema = new mongoose.Schema(
     areaUnit: { type: String, default: "sqm" },
 
     rooms: { type: Number, default: 0 },
+    salon: { type: String, trim: true },
     bathrooms: { type: Number, default: 0 },
 
     floorNumber: { type: Number, default: null },
     totalFloors: { type: Number, default: null },
+    apartmentNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     hasElevator: { type: Boolean, default: false },
     roofPriority: {
       type: String,

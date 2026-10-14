@@ -33,10 +33,18 @@ const buildEstateQuery = (filters) => {
     }
   }
   // الغرف
-  if (filters.rooms && filters.rooms.length > 0) {
-    query.rooms = { $in: filters.rooms };
-  }
+  // Bedrooms range filter
+  if (filters.minBedrooms !== undefined || filters.maxBedrooms !== undefined) {
+    query.rooms = {};
 
+    if (filters.minBedrooms !== undefined) {
+      query.rooms.$gte = filters.minBedrooms;
+    }
+
+    if (filters.maxBedrooms !== undefined) {
+      query.rooms.$lte = filters.maxBedrooms;
+    }
+  }
   // الحالة
   if (filters.status && filters.status !== "All") {
     query.status = filters.status;
